@@ -1,0 +1,18 @@
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Misc
+app/config.cfg
+local_test.py
+deploy.py
+__pycache__/
+test.py
+tests.py
+package-lock.json
+node_modules
