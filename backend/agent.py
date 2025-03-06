@@ -62,3 +62,15 @@ async def register_service_request(request: ServiceRequest):
             "error": str(e),
             "details": response.text if hasattr(response, 'text') else None
         }
+
+
+chat_histories = {}
+
+async def handle_user_message(user_id: str, message: str):
+    if user_id not in chat_histories:
+        chat_histories[user_id] = []
+    messages = chat_histories[user_id]
+    response = await agent.run(message, message_history=messages)
+    messages = response.all_messages()
+    chat_histories[user_id] = messages
+    return response
