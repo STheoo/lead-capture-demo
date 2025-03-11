@@ -1,11 +1,15 @@
 import React from "react";
-import logo from "../assets/swordlogo.jpg";
+import ChatWidget from "../components/ChatWidget";
+import NavBar from "../components/NavBar";
+import Hero from "../components/Hero";
 
 const Homepage = () => {
   return (
     <>
       <div className="flex justify-center items-center h-dvh w-full bg-radial from-[#225688] from-10% to-[#cce6ff] to-300%">
-        <img src={logo} alt="logo" className="scale-25" />
+        <NavBar />
+        <Hero />
+        <ChatWidget />
       </div>
     </>
   );
