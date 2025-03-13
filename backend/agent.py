@@ -12,15 +12,21 @@ from pydantic_ai.models.openai import OpenAIModel
 from dotenv import load_dotenv
 import os
 
-import chromadb
+from chromadb import Collection
+
+from vector_db import initialize_chroma
 
 load_dotenv()
+
+def read_file(file_path: str):
+    with open(file_path, "r") as file:
+        return file.read()
 
 @dataclass
 class LeadDeps:
     airtable_api: str | None
     airtable_app: str | None
-    db: chromadb.Collection
+    db: Collection | None
 
 openai_model = OpenAIModel('gpt-4o')
 
@@ -29,9 +35,19 @@ agent = Agent(
     system_prompt=
         "You are an expert customer service representative in a software company called Sword Group."
         "Your job is to greet and assist the customer with any questions, but with an objective to get his details."
-        "If you do not know the answer to any questions specific about the company, just make stuff up.",
+        "Also retreive documentation sections to help you answer company related questions",
     deps_type=LeadDeps
     )
+
+@agent.tool_plain
+async def get_cost_estimate(project_type: str, description: str) -> str:
+    """Estimate the cost of a software project requested by the user."""
+    system_prompt = read_file(f"./docs/price.MD").format(project_type=project_type, description=description)
+
+    cost_agent = Agent("openai:gpt-4o", system_prompt=system_prompt)
+    response = await cost_agent.run(" ", model_settings={"temperature": 0.2})
+    print(response.data)
+    return response.data
 
 @agent.tool
 async def retrieve(ctx: RunContext[LeadDeps], search_query: str) -> str:
@@ -41,10 +57,14 @@ async def retrieve(ctx: RunContext[LeadDeps], search_query: str) -> str:
         context: The call context.
         search_query: The search query.
     """
-    ctx.dp.collection.query(
-        query_texts=search_query,
-        n_results=2,
-        include=["documents"]
+    data = ctx.deps.db.query(
+            query_texts=search_query,
+            n_results=2,
+            include=["documents"]
+        )
+
+    return '\n\n'.join(
+        data["documents"][0]
     )
 
 class ServiceRequest(BaseModel):
@@ -97,9 +117,10 @@ chat_histories = {}
 async def handle_user_message(user_id: str, message: str):
     airtable_api = os.getenv('AIR_TABLE_KEY')
     airtable_app = os.getenv('AIR_TABLE_APP')
+    db = initialize_chroma()
 
-    deps = LeadDeps(airtable_api=airtable_api, airtable_app=airtable_app)
 
+    deps = LeadDeps(airtable_api=airtable_api, airtable_app=airtable_app, db=db)
 
     if user_id not in chat_histories:
         chat_histories[user_id] = []
