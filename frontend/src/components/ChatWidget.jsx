@@ -4,7 +4,13 @@ import { RiChatAiFill, RiCloseLine, RiSendPlaneLine } from "react-icons/ri";
 
 const ChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState([
+    {
+      content:
+        "Hello there. I work for Sword and here to help answer all your questions! 😊",
+      isUser: false,
+    },
+  ]);
   const [inputText, setInputText] = useState("");
 
   const handleSend = async () => {
