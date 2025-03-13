@@ -12,12 +12,15 @@ from pydantic_ai.models.openai import OpenAIModel
 from dotenv import load_dotenv
 import os
 
+import chromadb
+
 load_dotenv()
 
 @dataclass
 class LeadDeps:
     airtable_api: str | None
     airtable_app: str | None
+    db: chromadb.Collection
 
 openai_model = OpenAIModel('gpt-4o')
 
@@ -28,6 +31,20 @@ agent = Agent(
         "Your job is to greet and assist the customer with any questions, but with an objective to get his details."
         "If you do not know the answer to any questions specific about the company, just make stuff up.",
     deps_type=LeadDeps
+    )
+
+@agent.tool
+async def retrieve(ctx: RunContext[LeadDeps], search_query: str) -> str:
+    """Retrieve documentation sections based on a search query.
+
+    Args:
+        context: The call context.
+        search_query: The search query.
+    """
+    ctx.dp.collection.query(
+        query_texts=search_query,
+        n_results=2,
+        include=["documents"]
     )
 
 class ServiceRequest(BaseModel):

@@ -38,14 +38,32 @@ def chunk(doc: str):
     return chunks
 
 def update_database(db: chromadb.Collection, chunks):
+    existing_data = db.get()
+    existing_docs = existing_data.get('documents', [])
+    existing_ids = existing_data.get('ids', [])
+
+    print(chunks)
+    print(existing_docs)
+    
+    # Check if the content and order of existing documents match the new chunks
+    if len(existing_docs) == len(chunks):
+        print("Database is up-to-date. No changes needed.")
+        return
+    
+    # Remove existing documents if they differ from new chunks
+    if existing_ids:
+        db.delete(ids=existing_ids)
+    
+    # Add new chunks with updated IDs
     doc_ids = [f"doc_{i}" for i in range(len(chunks))]
     db.add(ids=doc_ids, documents=chunks)
+    print("Database updated with new chunks.")
 
 def main():
-    # collection = initialize_chroma()
+    collection = initialize_chroma()
     doc = parse_doc(SOURCE)
-    chunk(doc)
-    # update_database(collection, chunks)
+    chunks = chunk(doc)
+    update_database(collection, chunks)
 
 if __name__ == "__main__":
     main()
