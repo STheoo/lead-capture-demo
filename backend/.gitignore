@@ -17,6 +17,4 @@ tests.py
 package-lock.json
 node_modules
 
-chroma_db
-
-test.py
+chroma_db/
