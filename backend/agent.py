@@ -115,7 +115,15 @@ async def register_service_request(ctx: RunContext[LeadDeps], request: ServiceRe
             "error": str(e),
             "details": response.text if hasattr(response, 'text') else None
         }
+    
+class BusinessInfo(BaseModel):
+    industry: str = Field(description="The industry the business is in")
+    objectives: str = Field(description="The business objectives and future goals")
+    challenges: str = Field(description="The technological challenges the business is currently facing")
 
+@agent.tool_plain
+async def recommend_services(business_info: BusinessInfo) -> str:
+    return None
 
 chat_histories = {}
 
