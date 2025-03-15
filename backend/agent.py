@@ -29,32 +29,32 @@ class LeadDeps:
     db: Collection | None
 
 openai_model = OpenAIModel('gpt-4o')
+agent_system_prompt = read_file("docs/system_prompt.MD")
 
 agent = Agent(
     openai_model,
-    system_prompt=
-        "You are an expert customer service representative in a software company called Sword Group."
-        "Your job is to greet and assist the customer with any questions, but with an objective to get his details."
-        "Also retreive documentation sections to help you answer company related questions",
+    system_prompt = agent_system_prompt,
     deps_type=LeadDeps
     )
 
 @agent.tool_plain
 async def get_cost_estimate(project_type: str, description: str) -> str:
-    """Estimate the cost of a software project requested by the user."""
-    system_prompt = read_file(f"./docs/price.MD").format(project_type=project_type, description=description)
-
-    cost_agent = Agent("openai:gpt-4o", system_prompt=system_prompt)
-    response = await cost_agent.run(" ", model_settings={"temperature": 0.2})
-    print(response.data)
-    return response.data
+    """Retrieve the price list of all the projects types and sizes.
+    
+    Args:
+        project_type: User's desired project type.
+        description: User's desired project description.
+    """
+    price_list = read_file(f"./docs/price.MD").format(project_type=project_type, description=description)
+    
+    return price_list
 
 @agent.tool
 async def retrieve(ctx: RunContext[LeadDeps], search_query: str) -> str:
     """Retrieve documentation sections based on a search query.
 
     Args:
-        context: The call context.
+        ctx: The call context.
         search_query: The search query.
     """
     data = ctx.deps.db.query(
@@ -77,7 +77,12 @@ class ServiceRequest(BaseModel):
 
 @agent.tool
 async def register_service_request(ctx: RunContext[LeadDeps], request: ServiceRequest) -> dict:
-    """Registers a new service request in Airtable."""
+    """Registers a new service request in Airtable.
+    
+    Args:
+        ctx: The call context.
+        request: The user and service request details.
+    """
     base_url: str = "https://api.airtable.com"
 
     url = f"{base_url}/v0/{ctx.deps.airtable_app}/SwordLeads"
