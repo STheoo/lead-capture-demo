@@ -71,7 +71,7 @@ class ServiceRequest(BaseModel):
     name: str = Field(description="Full name of the lead")
     phone_number: str = Field(description="Contact phone number")
     email: str = Field(description="Email address")
-    type: Literal['Website', 'Mobile App', 'AI Automation'] = Field(description="Type of service in interest")
+    type: Literal['Website', 'Mobile App', 'AI Automation', 'IT'] = Field(description="Type of service in interest")
     pages: Optional[str] = Field(description="An approximation of how many pages they expect, if they chose website or mobile app.", default="N/A")
     description: Optional[str] = Field(description="Additional description about what they expect to get.", default="")
 
@@ -123,7 +123,13 @@ class BusinessInfo(BaseModel):
 
 @agent.tool_plain
 async def recommend_services(business_info: BusinessInfo) -> str:
-    return None
+    """Retrieves context on the companies service list and clear instructions on how to recommend a service to the client.
+
+    Args:
+        business_info: The user's business information to find fittings services.
+    """
+    service_list = read_file(f"./docs/recommendation.MD").format(industry=business_info.industry, objectives=business_info.objectives, challenges=business_info.challenges)
+    return service_list
 
 chat_histories = {}
 
