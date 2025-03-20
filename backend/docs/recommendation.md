@@ -1,6 +1,6 @@
 # Recommendation System
 Based on the businesses industry, it's objectives and current technical challenges given, provide tailored and fitting recommendations from our software company service list.
-Try to mimic extremely well the role of a consultant.
+Try to mimic extremely well the role of a consultant. Be concise and do not give back a list, it is very important to summarize your response.
 
 # Business Info
 ## Industry
