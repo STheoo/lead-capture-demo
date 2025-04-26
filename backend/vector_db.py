@@ -15,9 +15,9 @@ def parse_doc(source: str):
 
     return result.document
 
-def initialize_chroma():
+def initialize_chroma(name: str):
     chroma_client = chromadb.PersistentClient(path="./chroma_db")
-    collection = chroma_client.get_or_create_collection(name="html")
+    collection = chroma_client.get_or_create_collection(name=name)
 
     return collection
 
@@ -60,7 +60,7 @@ def update_database(db: chromadb.Collection, chunks):
     print("Database updated with new chunks.")
 
 def main():
-    collection = initialize_chroma()
+    collection = initialize_chroma("html")
     doc = parse_doc(SOURCE)
     chunks = chunk(doc)
     update_database(collection, chunks)

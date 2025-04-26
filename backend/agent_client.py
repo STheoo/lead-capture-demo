@@ -15,12 +15,11 @@ import os
 from chromadb import Collection
 
 from vector_db import initialize_chroma
+from utils import read_file
 
 load_dotenv()
 
-def read_file(file_path: str):
-    with open(file_path, "r") as file:
-        return file.read()
+
 
 @dataclass
 class LeadDeps:
@@ -31,13 +30,14 @@ class LeadDeps:
 openai_model = OpenAIModel('gpt-4o')
 agent_system_prompt = read_file("docs/system_prompt.MD")
 
-agent = Agent(
+agent_client = Agent(
     openai_model,
     system_prompt = agent_system_prompt,
-    deps_type=LeadDeps
-    )
+    deps_type=LeadDeps,
+    instrument=True
+)
 
-@agent.tool_plain
+@agent_client.tool_plain
 async def get_cost_estimate(project_type: str, description: str) -> str:
     """Retrieve the price list of all the projects types and sizes.
     
@@ -49,7 +49,7 @@ async def get_cost_estimate(project_type: str, description: str) -> str:
     
     return price_list
 
-@agent.tool
+@agent_client.tool
 async def retrieve(ctx: RunContext[LeadDeps], search_query: str) -> str:
     """Retrieve documentation sections based on a search query.
 
@@ -69,13 +69,14 @@ async def retrieve(ctx: RunContext[LeadDeps], search_query: str) -> str:
 
 class ServiceRequest(BaseModel):
     name: str = Field(description="Full name of the lead")
+    location: str = Field(description="The location as in the country the client is based in and would like the service to be based in.")
     phone_number: str = Field(description="Contact phone number")
     email: str = Field(description="Email address")
     type: Literal['Website', 'Mobile App', 'AI Automation', 'IT'] = Field(description="Type of service in interest")
     pages: Optional[str] = Field(description="An approximation of how many pages they expect, if they chose website or mobile app.", default="N/A")
     description: Optional[str] = Field(description="Additional description about what they expect to get.", default="")
 
-@agent.tool
+@agent_client.tool
 async def register_service_request(ctx: RunContext[LeadDeps], request: ServiceRequest) -> dict:
     """Registers a new service request in Airtable.
     
@@ -93,6 +94,7 @@ async def register_service_request(ctx: RunContext[LeadDeps], request: ServiceRe
     payload = {
         "fields": {
             "Name": request.name,
+            "Location": request.location,
             "Phone": request.phone_number,
             "Email": request.email,
             "Type": request.type,
@@ -121,7 +123,7 @@ class BusinessInfo(BaseModel):
     objectives: str = Field(description="The business objectives and future goals")
     challenges: str = Field(description="The technological challenges the business is currently facing")
 
-@agent.tool_plain
+@agent_client.tool_plain
 async def recommend_services(business_info: BusinessInfo) -> str:
     """Retrieves context on the companies service list and clear instructions on how to recommend a service to the client.
 
@@ -134,17 +136,18 @@ async def recommend_services(business_info: BusinessInfo) -> str:
 chat_histories = {}
 
 async def handle_user_message(user_id: str, message: str):
-    airtable_api = os.getenv('AIR_TABLE_KEY')
-    airtable_app = os.getenv('AIR_TABLE_APP')
-    db = initialize_chroma()
-
-
-    deps = LeadDeps(airtable_api=airtable_api, airtable_app=airtable_app, db=db)
 
     if user_id not in chat_histories:
         chat_histories[user_id] = []
     messages = chat_histories[user_id]
-    response = await agent.run(message, deps=deps, message_history=messages)
+
+
+    airtable_api = os.getenv('AIR_TABLE_KEY')
+    airtable_app = os.getenv('AIR_TABLE_APP')
+    db = initialize_chroma()
+
+    deps = LeadDeps(airtable_api=airtable_api, airtable_app=airtable_app, db=db)
+    response = await agent_client.run(message, deps=deps, message_history=messages)
     messages = response.all_messages()
     chat_histories[user_id] = messages
     return response

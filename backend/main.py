@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from typing import List
 
 from pydantic_ai.messages import ModelMessage, ModelRequest, ModelResponse, TextPart, UserPromptPart
-from agent import agent, LeadDeps
+from agent_client import agent, LeadDeps
 
 from vector_db import initialize_chroma
 
