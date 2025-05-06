@@ -33,7 +33,6 @@ def chunk(doc: str):
         enriched_text = chunker.serialize(chunk=chunk)
         print(f"chunker.serialize(chunk):\n{repr(f'{enriched_text[:300]}…')}")
         chunks.append(enriched_text)
-        print()
 
     return chunks
 

@@ -119,12 +119,28 @@ async def call_graph(request: Request, file: UploadFile = File(...)):
 
 
 if __name__ == "__main__":
-    SOURCE = "https://www.linkedin.com/jobs/search/?currentJobId=3363425295&geoId=104677530&keywords=Sword%20Group&location=Gr%C3%A8ce&refresh=true"
+    SOURCES = [
+        "https://www.linkedin.com/jobs/search/?currentJobId=3363425295&geoId=104677530&keywords=Sword%20Group&location=Gr%C3%A8ce&refresh=true",
+        "https://www.linkedin.com/jobs/search/?currentJobId=3366796081&geoId=100565514&keywords=Sword%20Group&location=Belgique&refresh=true",
+        "https://www.linkedin.com/jobs/search/?currentJobId=3342529388&geoId=101174742&keywords=Sword%20Group&location=Canada&refresh=true",
+        "https://www.linkedin.com/jobs/search/?currentJobId=4195462375&geoId=105015875&keywords=Sword%20Group&origin=JOB_SEARCH_PAGE_SEARCH_BUTTON&refresh=true",
+        "https://www.linkedin.com/jobs/search/?currentJobId=4203618701&geoId=101834488&keywords=Sword%20Group&origin=JOB_SEARCH_PAGE_SEARCH_BUTTON&refresh=true",
+        "https://www.linkedin.com/jobs/search/?currentJobId=4202859244&geoId=104042105&keywords=Sword%20Group&origin=JOB_SEARCH_PAGE_LOCATION_AUTOCOMPLETE&refresh=true",
+        "https://www.linkedin.com/jobs/search/?currentJobId=4204626167&geoId=105646813&keywords=Sword%20Group&origin=JOB_SEARCH_PAGE_SEARCH_BUTTON&refresh=true",
+        "https://www.linkedin.com/jobs/search/?currentJobId=4204766896&geoId=106693272&keywords=Sword%20Group&origin=JOB_SEARCH_PAGE_LOCATION_AUTOCOMPLETE&refresh=true",
+        "https://www.linkedin.com/jobs/search/?currentJobId=4209519002&geoId=101165590&keywords=Sword%20Group&origin=JOB_SEARCH_PAGE_LOCATION_AUTOCOMPLETE&refresh=true",
+
+]
 
     #Update vector database
     collection = vector_db.initialize_chroma("vacancies")
-    doc = vector_db.parse_doc(SOURCE)
-    chunks = vector_db.chunk(doc)
+    chunks = []
+    for source in SOURCES:
+        try:
+            doc = vector_db.parse_doc(source)
+            chunks += vector_db.chunk(doc)
+        except:
+            print("Parsing failed. HTTP Error.")
     vector_db.update_database(collection, chunks)
 
     print("Running the FastAPI server on port")

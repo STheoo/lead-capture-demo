@@ -1,23 +1,26 @@
-import asyncio
-import os
-from dotenv import load_dotenv
+from utils import read_file
+from pydantic_ai import Agent, RunContext
 from typing import List
+import asyncio
 
 from pydantic_ai.messages import ModelMessage, ModelRequest, ModelResponse, TextPart, UserPromptPart
-from backend.agents.agent_client import agent, LeadDeps
 
-from vector_db import initialize_chroma
+import dotenv
 
-load_dotenv()
+dotenv.load_dotenv()
+
+interviewer_system_prompt = read_file("docs/system_prompt_interviewer.MD")
+
+
+interview_agent = Agent(  
+    'openai:gpt-4o',
+    system_prompt=interviewer_system_prompt,
+    instrument=True
+)
 
 class CLI:
     def __init__(self):
         self.messages: List[ModelMessage] = []
-        self.deps = LeadDeps(
-            airtable_api = os.getenv('AIR_TABLE_KEY'),
-            airtable_app = os.getenv('AIR_TABLE_APP'),
-            db = initialize_chroma()
-        )
 
     async def chat(self):        
         try:
@@ -27,9 +30,8 @@ class CLI:
                     break
 
                 # Run the agent
-                result = await agent.run(
+                result = await interview_agent.run(
                     user_input,
-                    deps=self.deps,
                     message_history=self.messages
                 )
 
@@ -51,7 +53,7 @@ class CLI:
                     ModelResponse(parts=[TextPart(content=result.data)])
                 )
         finally:
-            await self.deps.client.aclose()
+            print()
 
 async def main():
     cli = CLI()
@@ -59,3 +61,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
